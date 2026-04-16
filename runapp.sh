@@ -1,0 +1,1 @@
+uv run streamlit run app.py --server.address $(tailscale ip -4) --server.port 10050
