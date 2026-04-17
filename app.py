@@ -87,8 +87,20 @@ uploaded_files = st.file_uploader(
 language_name = st.selectbox("Language", list(LANGUAGES.keys()), index=list(LANGUAGES.keys()).index("Spanish"))
 language_code = LANGUAGES[language_name]
 
+MAX_FILE_SIZE_MB = 25
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
 if uploaded_files and st.button("Transcribe"):
     for uploaded_file in uploaded_files:
+        ext = uploaded_file.name.rsplit(".", 1)[-1].lower()
+        if ext not in SUPPORTED_FORMATS:
+            st.error(f"**{uploaded_file.name}** — unsupported format `.{ext}`. Allowed: {', '.join(f.upper() for f in SUPPORTED_FORMATS)}")
+            continue
+
+        if uploaded_file.size > MAX_FILE_SIZE_BYTES:
+            st.error(f"**{uploaded_file.name}** — file is {uploaded_file.size / 1024 / 1024:.1f} MB, exceeds the {MAX_FILE_SIZE_MB} MB limit.")
+            continue
+
         with st.spinner(f"Transcribing {uploaded_file.name}..."):
             uploaded_file.seek(0)
             files = {"file": (uploaded_file.name, uploaded_file, uploaded_file.type)}
@@ -103,7 +115,7 @@ if uploaded_files and st.button("Transcribe"):
         if response.ok:
             st.session_state.transcriptions[uploaded_file.name] = response.json().get("text", "")
         else:
-            st.error(f"{uploaded_file.name} — Error {response.status_code}: {response.text}")
+            st.error(f"**{uploaded_file.name}** — Error {response.status_code}: {response.text}")
 
 for filename, text in st.session_state.transcriptions.items():
     st.subheader(filename)
